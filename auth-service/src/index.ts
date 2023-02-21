@@ -1,18 +1,18 @@
-import express from 'express';
-import { json } from 'body-parser';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import cors from 'cors';
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
-import * as process from "process";
+import express from 'express';
+import router from "./routes/auth.routes";
 
 dotenv.config();
-
 const app = express();
-app.use(json());
 
-const pool = new Pool({
+app.use(express.json());
+app.use(cors());
 
+app.use('/api/auth-service/', router);
+
+app.listen(process.env.PORT, () => {
+	console.log(`Server running on port ${process.env.PORT}`);
 });
 
 
