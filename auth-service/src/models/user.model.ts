@@ -1,8 +1,8 @@
 export interface UserModel {
-	id: string;
+	uid: string;
 	username: string;
 	email: string;
-	passwordHash: string;
+	password_hash: string;
 	salt: string;
 	createdAt: Date;
 	updatedAt: Date;

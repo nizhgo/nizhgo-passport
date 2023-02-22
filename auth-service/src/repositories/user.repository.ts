@@ -1,17 +1,6 @@
-import express from 'express';
-import dotenv from "dotenv";
-import { Pool, QueryResult } from "pg";
+import {QueryResult} from "pg";
+import pool from "../database/database";
 import {UserModel} from "../models/user.model";
-import {PasswordService} from "../services/password.service";
-
-dotenv.config();
-const pool = new Pool({
-	user: process.env.DB_USER,
-	host: process.env.DB_HOST,
-	database: process.env.DB_NAME,
-	password: process.env.DB_PASSWORD,
-	port: parseInt(process.env.DB_PORT || '5432'),
-});
 
 
 export class UsersRepository {
@@ -43,15 +32,16 @@ export class UsersRepository {
 		}
 	}
 
-	public static async getUserById(id: string): Promise<UserModel | null> {
+	public static async getUserByUid(uid: string): Promise<UserModel | null> {
 		try {
 			const result: QueryResult = await pool.query(
 				"SELECT * FROM users WHERE id = $1",
-				[id]
+				[uid]
 			);
 			const user: UserModel = result.rows[0];
 			return user;
-		} catch (error) {
+		}
+		catch (error) {
 			console.log(error);
 			return null;
 		}
@@ -60,19 +50,32 @@ export class UsersRepository {
 public static async createUser(user: UserModel): Promise<UserModel | null> {
 		try {
 			const result: QueryResult = await pool.query(
-				"INSERT INTO users (username, email, password_hash, salt, is_disabled) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-				[user.username, user.email, user.passwordHash, user.salt, user.isDisabled]
+				"INSERT INTO users (uid, username, email, password_hash, salt, created_at, updated_at, is_disabled) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+				[user.uid, user.username, user.email, user.password_hash, user.salt, user.createdAt, user.updatedAt, user.isDisabled]
 			);
 			const newUser: UserModel = result.rows[0];
 			return newUser;
-		} catch (error) {
+		}
+		catch (error) {
+			console.log(error);
+			return null;
+		}
+}
+
+	public static async updatePassword(uid: string, passwordHash: string, salt: string): Promise<UserModel | null> {
+		try {
+			const result: QueryResult = await pool.query(
+				"UPDATE users SET password_hash = $1, salt = $2 updated_at = NOW() WHERE id = $3 RETURNING *",
+				[passwordHash, salt, uid]
+			);
+			const user: UserModel = result.rows[0];
+			return user;
+		}
+		catch (error) {
 			console.log(error);
 			return null;
 		}
 	}
 }
-
-
-
 
 

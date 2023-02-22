@@ -1,36 +1,16 @@
-import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { Pool } from "pg";
-import dotenv from "dotenv";
+import {
+	Request,
+	Response
+} from "express";
+import {v4 as uuidv4} from 'uuid';
 import {UserModel} from "../models/user.model";
-import { UsersRepository } from "../repositories/user.repository";
-import { PasswordService } from "../services/password.service";
-import { v4 as uuidv4 } from 'uuid';
+import {TokensRepository} from "../repositories/tokens.repository";
+import {UsersRepository} from "../repositories/user.repository";
+import {PasswordService} from "../services/password.service";
+import {TokenService} from "../services/token.service";
 
-dotenv.config();
-
-const pool = new Pool({
-	user: process.env.DB_USER,
-	host: process.env.DB_HOST,
-	database: process.env.DB_NAME,
-	password: (process.env.DB_PASSWORD || 'test').toString(),
-	port: parseInt(process.env.DB_PORT),
-});
-
-console.log("DB_USER: " + process.env.DB_USER);
-
-pool.query('SELECT NOW()', (err, res) => {
-	if (err) {
-		console.error(err);
-	} else {
-		console.log(res.rows[0]);
-	}
-	// pool.end();
-});
-
-
-class AuthController {
-	public async register(req: Request, res: Response): Promise<void> {
+export class AuthController {
+	public static async registration(req: Request, res: Response): Promise<void> {
 		try {
 			const {username, password, email} = req.body;
 
@@ -54,7 +34,7 @@ class AuthController {
 			}
 
 			//check if user already exists
-			const existingUsername  = await UsersRepository.getUserByUsername(username);
+			const existingUsername = await UsersRepository.getUserByUsername(username);
 			if (existingUsername) {
 				return res.status(400).json({message: "Username already exists"});
 			}
@@ -69,9 +49,9 @@ class AuthController {
 			const passwordHash = PasswordService.hashPassword(password, salt);
 
 			const user: UserModel = {
-				id: uuidv4(),
+				uid: uuidv4(),
 				username: username,
-				passwordHash: passwordHash,
+				password_hash: passwordHash,
 				email: email,
 				salt: salt,
 				createdAt: new Date(),
@@ -81,73 +61,136 @@ class AuthController {
 
 			const regResult = await UsersRepository.createUser(user);
 			if (regResult) {
-				jwt.sign({user}, process.env.JWT_SECRET, {expiresIn: "1h"}, (err, token) => {
-					if (err) {
-						console.error(err);
-						res.status(500).json({message: "Registration failed, please try again later"});
-					}
-					else {
-						res.status(201).json({token});
-					}
-				});
+				//create access and refresh token
+				const accessToken = TokenService.createAccessToken(user);
+				const refreshToken = TokenService.createRefreshToken(user);
+				//save refresh token to db
+				await TokensRepository.saveRefreshToken(refreshToken, user, req);
+				await res.status(200).json({accessToken, refreshToken});
 			}
 			else {
-				res.status(500).json({message: "Registration failed, please try again later"});
+				await res.status(500).json({message: "Registration failed, please try again later"});
 			}
 		}
 		catch (err) {
 			console.error(err);
-			res.status(500).json({message: "Registration failed, please try again later"});
+			await res.status(500).json({message: "Registration failed, please try again later"});
 		}
 	}
 
-	public async login(req: Request, res: Response): Promise<void> {
-		try {
-			const {username, password} = req.body;
-
-			const user = await UsersRepository.getUserByUsername(username);
-			if (!user) {
-				return res.status(404).json({message: "User not found"});
-			}
-
-			const passwordHash = PasswordService.hashPassword(password, user.salt);
-
-			if (passwordHash !== user.passwordHash) {
-				return res.status(401).json({message: "Invalid credentials"});
-			}
-
-			jwt.sign({user}, process.env.JWT_SECRET, {expiresIn: "1h"}, (err, token) => {
-				if (err) {
-					console.error(err);
-					res.status(500).json({message: "Login failed, please try again later"});
-				}
-				else {
-					res.status(200).json({token});
-				}
-			});
+	public static async login(req: Request, res: Response): Promise<void> {
+		const {indeficator, password} = req.body;
+		if (!indeficator || !password) {
+			return await res.status(400).json({message: "Incorrect request"});
 		}
-		catch (err) {
-			console.error(err);
-			res.status(500).json({message: "Login failed, please try again later"});
+		const userByEmail = await UsersRepository.getUserByEmail(indeficator);
+		const userByUsername = await UsersRepository.getUserByUsername(indeficator);
+		const user = userByEmail || userByUsername;
+		if (!user) {
+			return await res.status(400).json({message: "User not exists"});
 		}
+		if (user.isDisabled) {
+			return await res.status(400).json({message: "User is disabled, please contact support"});
+		}
+		const passwordHash = PasswordService.hashPassword(password, user.salt);
+		if (passwordHash !== user.password_hash) {
+			return await res.status(400).json({message: "Incorrect password"});
+		}
+		const accessToken = TokenService.createAccessToken(user);
+		const refreshToken = TokenService.createRefreshToken(user);
+		await TokensRepository.saveRefreshToken(refreshToken, user, req);
+		await res.status(200).json({accessToken, refreshToken});
 	}
 
-	public isTokenValid(req: Request, res: Response): void {
-		const {token} = req.body;
-		jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-			if (err) {
-				res.status(401).json({message: "Invalid token"});
-			}
-			else {
-				//decode token to get user data
-				const {user} = jwt.decode(token) as {user: UserModel};
-				res.status(200).json({user});
-			}
+	public static async logout(req: Request, res: Response): Promise<void> {
+		const {refreshToken} = req.body;
+		if (!refreshToken) {
+			return await res.status(400).json({message: "Incorrect request"});
 		}
+		const token = await TokensRepository.getRefreshTokenByToken(refreshToken);
+		if (!token) {
+			return await res.status(400).json({message: "Incorrect request"});
+		}
+		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user logout');
+		await res.status(200).json({message: "Logout successful"});
+	}
+
+	public static async changePassword(req: Request, res: Response): Promise<void> {
+		const {oldPassword, newPassword} = req.body;
+		if (!oldPassword || !newPassword) {
+			return await res.status(400).json({message: "Incorrect request"});
+		}
+		const user = await UsersRepository.getUserByUid(req.user.uid);
+		if (!user) {
+			return await res.status(400).json({message: "User not exists"});
+		}
+		const passwordHash = PasswordService.hashPassword(oldPassword, user.salt);
+		if (passwordHash !== user.password_hash) {
+			return await res.status(400).json({message: "Incorrect password"});
+		}
+		const newSalt = PasswordService.createSalt();
+		const newPasswordHash = PasswordService.hashPassword(newPassword, newSalt);
+		await UsersRepository.updatePassword(user.uid, newPasswordHash, newSalt);
+		await res.status(200).json({message: "Password changed successfully"});
+	}
+
+	public static async refreshToken(req: Request, res: Response): Promise<void> {
+		const {refreshToken} = req.body;
+		if (!refreshToken) {
+			return await res.status(400).json({message: "Incorrect request"});
+		}
+		const token = await TokensRepository.getRefreshTokenByToken(refreshToken);
+		if (!token) {
+			return await res.status(400).json({message: "Refresh token not exists"});
+		}
+		if (token.is_disabled) {
+			return await res.status(400).json({message: "Refresh token is disabled. Please login again"});
+		}
+		const user = await UsersRepository.getUserByUid(token.user_uid);
+		if (!user) {
+			return await res.status(400).json({message: "User not exists"});
+		}
+		if (user.isDisabled) {
+			return await res.status(400).json({message: "User is disabled, please contact support"});
+		}
+		const accessToken = TokenService.createAccessToken(user);
+		return await res.status(200).json({accessToken: accessToken});
+	}
+
+	public static async getUser(req: Request, res: Response): Promise<void> {
+	}
+
+	public static async disableToken(req: Request, res: Response): Promise<void> {
+	const {refreshToken} = req.body;
+		if (!refreshToken) {
+			return await res.status(400).json({message: "Incorrect request"});
+		}
+		const token = await TokensRepository.getRefreshTokenByToken(refreshToken);
+		if (!token) {
+			return await res.status(400).json({message: "Refresh token not exists"});
+		}
+		if (token.is_disabled) {
+			return await res.status(400).json({message: "This refresh token is disabled. Please login again"});
+		}
+		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user manual disable');
+		await res.status(200).json({message: "Refresh token disabled successfully"});
+	}
+
+	public static async getActiveSessions(req: Request, res: Response): Promise<void> { //return all active tokens for user
+		const authHeader = req.headers.authorization;
+		const accessToken = authHeader.split(" ")[1];
+		const user = await TokenService.verifyAccessToken(accessToken);
+		const tokens = await TokensRepository.getActiveTokensByUserUid(user.uid);
+		//return in format {id, device: string, browser: string, created_at: string, last_used_at: string}
+		const result = tokens.map(token => {
+				const {id, device, browser, created_at, last_used_at} = token;
+				return {id, device, browser, created_at, last_used_at};
+			}
 		);
+		await res.status(200).json(result);
 	}
-}
 
-export default new AuthController();
+
+}
 
 
