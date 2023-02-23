@@ -1,26 +1,39 @@
 import express from 'express';
-import {AuthController} from '../controllers/auth.controller';
+import {LoginControllers} from "../controllers/login.controllers";
+import PasswordController from "../controllers/password.controller";
+import {RegistrationController} from "../controllers/registration.controller";
+import {TokenController} from "../controllers/token.controller";
+import {UserController} from "../controllers/user.controller";
 import {authMiddleware} from "../middlewares/auth";
+import {HeaderService} from "../services/header.service";
 
 const router = express.Router();
 
-router.post('/reg', AuthController.registration);
-router.post('/login', AuthController.login);
-router.post('/refresh', AuthController.refreshToken);
-router.post('/ping', (req, res) => {
+router.post('/reg', RegistrationController.registerUser);
+router.post('/login', LoginControllers.login);
+// router.post('/refresh', TokenController.refreshAccessToken);
+router.get('/ping', (req, res) => {
+	const browser = HeaderService.getBrowser(req);
+	const device = HeaderService.getDevice(req);
 	res.status(200)
 		.send(JSON.stringify({
 			message: 'pong',
 			date: new Date(),
 			'user-agent': req.headers['user-agent'],
 			"your-ip": req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-			"your-send": req.body
+			"your-send": req.body,
+			browser,
+			device
 		}));
 	res.end();
 });
 
-router.post('/logout', authMiddleware, AuthController.logout);
-router.post('/disableToken', authMiddleware, AuthController.disableToken);
+router.post('/logout', authMiddleware, LoginControllers.logout);
+router.post('/disableToken', authMiddleware, TokenController.disableToken);
+
+
+//protected routes
+
 router.post('/sping', authMiddleware, (req, res) => {
 	res.status(200)
 		.send(JSON.stringify({
@@ -33,10 +46,9 @@ router.post('/sping', authMiddleware, (req, res) => {
 	res.end();
 });
 
-router.post('/changePassword', authMiddleware, AuthController.changePassword);
-router.get('/getUser', authMiddleware, AuthController.getUser);
-router.post('/getActiveSessions', authMiddleware, AuthController.getActiveSessions);
-//protected routes
+router.get('/reissueAccessToken', TokenController.validateRefreshToken, TokenController.reissueAccessToken);
+router.post('/changePassword', TokenController.validateAccessToken, PasswordController.changePassword);
+router.post('/getActiveSessions', authMiddleware, UserController.getActiveRefreshTokens);
 
 
 export default router;

@@ -35,7 +35,7 @@ export class UsersRepository {
 	public static async getUserByUid(uid: string): Promise<UserModel | null> {
 		try {
 			const result: QueryResult = await pool.query(
-				"SELECT * FROM users WHERE id = $1",
+				"SELECT * FROM users WHERE uid = $1",
 				[uid]
 			);
 			const user: UserModel = result.rows[0];
@@ -62,7 +62,7 @@ public static async createUser(user: UserModel): Promise<UserModel | null> {
 		}
 }
 
-	public static async updatePassword(uid: string, passwordHash: string, salt: string): Promise<UserModel | null> {
+	public static async updateUserPassword(uid: string, passwordHash: string, salt: string): Promise<UserModel | null> {
 		try {
 			const result: QueryResult = await pool.query(
 				"UPDATE users SET password_hash = $1, salt = $2 updated_at = NOW() WHERE id = $3 RETURNING *",

@@ -6,7 +6,7 @@ export interface RefreshTokenModel {
 	disabled_at?: Date;
 	browser: string;
 	device: string;
-	is_disabled: boolean;
+	isDisabled: boolean;
 	disable_reason?: string;
 	last_used_at: Date;
 }

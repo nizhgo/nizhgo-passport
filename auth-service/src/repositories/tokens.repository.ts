@@ -1,32 +1,20 @@
 import dotenv from "dotenv";
 import {QueryResult} from "pg";
-import useragent from "useragent";
 import pool from "../database/database";
 import {RefreshTokenModel} from "../models/refreshToken.model";
-import {UserModel} from "../models/user.model";
 
 dotenv.config();
 
 export class TokensRepository {
-	public static async saveRefreshToken(token: string, user: UserModel, req: Request): Promise<QueryResult> {
-		const agent = useragent.parse(req.headers['user-agent']);
-		const refreshToken: RefreshTokenModel = {
-			user_uid: user.uid,
-			token: token,
-			created_at: new Date(),
-			device: agent.os.toString().split(' ')[0], // Get the first word of the os string
-			browser: agent.toAgent().split(' ')[0], // Get the first word of the browser string
-			is_disabled: false,
-			last_used_at: new Date()
-		};
-		console.log(refreshToken);
+	public static async saveRefreshToken(refreshTokenModel: RefreshTokenModel): Promise<QueryResult> {
+		const {user_uid, token, created_at, device, browser, isDisabled, last_used_at} = refreshTokenModel;
 		try {
-			const result = await pool.query('INSERT INTO refresh_tokens (user_uid, token, created_at, device, browser, is_disabled) VALUES ($1, $2, $3, $4, $5, $6)', [refreshToken.user_uid, refreshToken.token, refreshToken.created_at, refreshToken.device, refreshToken.browser, refreshToken.is_disabled]);
+			const result = await pool.query('INSERT INTO refresh_tokens (user_uid, token, created_at, device, browser, is_disabled, last_used_at) VALUES ($1, $2, $3, $4, $5, $6, $7)', [user_uid, token, created_at, device, browser, isDisabled, last_used_at]);
 			return result;
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
@@ -42,7 +30,7 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
@@ -57,7 +45,7 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
@@ -72,7 +60,7 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
@@ -87,11 +75,11 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
-	public static async disableRefreshTokenByUserUid(uid: string, disableReason: string): Promise<RefreshTokenModel> {
+	public static async disableRefreshTokenByUserUid(uid: string, disableReason: string): Promise<void> {
 		try {
 			const result: QueryResult = await pool.query(
 				"SELECT * FROM refresh_tokens WHERE user_uid = $1",
@@ -109,7 +97,7 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
 		}
 	}
 
@@ -123,7 +111,22 @@ export class TokensRepository {
 		}
 		catch (error) {
 			console.log(error);
-			return null;
+			throw error;
+		}
+	}
+
+	public static async getAccessTokenByToken(token: string): Promise<RefreshTokenModel | null> {
+		try {
+			const result: QueryResult = await pool.query(
+				"SELECT * FROM refresh_tokens WHERE token = $1",
+				[token]
+			);
+			const refreshToken: RefreshTokenModel = result.rows[0];
+			return refreshToken;
+		}
+		catch (error) {
+			console.log(error);
+			throw error;
 		}
 	}
 }

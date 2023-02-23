@@ -1,3 +1,4 @@
+import cookies from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -9,6 +10,7 @@ const app = express();
 
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(cookies());
 app.use(cors());
 
 app.use('/api/auth-service/', router);

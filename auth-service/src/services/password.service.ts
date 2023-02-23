@@ -10,9 +10,9 @@ export class PasswordService {
 		return bcrypt.hashSync(password, salt);
 	}
 
-	public static passwordCompare(password: string, passwordHash: string): boolean {
+	public static async checkPassword(password: string, passwordHash: string): Promise<boolean> {
 		return bcrypt.compareSync(password, passwordHash);
-	}
 
+	}
 }
 
