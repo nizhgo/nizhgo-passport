@@ -8,9 +8,9 @@
     "build": "tsc",
     "build-image": "docker build -t auth-service .",
     "start": "node build/index.js",
-    "start-image": "docker-compose up -d",
+    "docker-compose": "docker-compose up -d",
     "stop-image": "docker-compose down",
-    "full-start": "pnpm build-image && pnpm start-image"
+    "mirate-database": "ts-node src/database/migrate.ts"
   },
   "author": "nizhgo",
   "license": "ISC",
