@@ -14,9 +14,9 @@ app.use(cookies());
 app.use(cors());
 
 app.use('/auth-service/api/', router);
-
 app.listen(process.env.PORT, () => {
 	console.log(`Server running on port ${process.env.PORT}`);
 });
+
 
 
