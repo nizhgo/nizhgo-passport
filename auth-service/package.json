@@ -4,7 +4,7 @@
   "description": "Микросервис для авторизации пользователей",
   "main": "index.ts",
   "scripts": {
-    "start": "nodemon src/index.ts",
+    "dev": "nodemon src/index.ts",
     "build": "tsc",
     "build-start": "tsc && node build/index.js"
   },
