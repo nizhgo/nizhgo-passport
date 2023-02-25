@@ -11,7 +11,21 @@ import {PasswordService} from "../services/password.service";
 import {TokenService} from "../services/token.service";
 
 
+/** Registration controller
+ * @class RegistrationController
+ * @description Registration controller class with static methods for registration.
+ * @static
+ * @exports RegistrationController
+ */
 export class RegistrationController {
+
+	/** Register user method for registration.
+	 * @method registerUser
+	 * @description Method for registration.
+	 * @static
+	 * @param req {Request} - request
+	 * @param res {Response} - response
+	 */
 	public static registerUser = async (req: Request, res: Response): Promise<void> => {
 		try {
 			const {login, password, email} = req.body;
@@ -44,11 +58,11 @@ export class RegistrationController {
 			}
 
 			// check if user already exists
-			const existingUsername = await UsersRepository.getUserByUsername(login);
+			const existingUsername = await UsersRepository.findUserByUsername(login);
 			if (existingUsername) {
 				return res.status(400).json({message: "Username already exists"});
 			}
-			const existingEmail = await UsersRepository.getUserByEmail(email);
+			const existingEmail = await UsersRepository.findUserByEmail(email);
 			if (existingEmail) {
 				return res.status(400).json({message: "Email already exists"});
 			}

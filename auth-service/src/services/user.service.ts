@@ -4,8 +4,7 @@ export class UserService {
 	/** Transform user object from database to UserModel
 	 *
 	 * @param user - user object from database
-	 * @returns UserModel object with all fields from database
-	 * @throws Error if user is undefined or null
+	 * @returns {UserModel || null} object with all fields from database or null if error
 	 */
 	public static mapUser(user: any): UserModel {
 		try {
@@ -21,7 +20,7 @@ export class UserService {
 			}
 		}
 		catch (err) {
-			throw new Error(err.message);
+			return null;
 		}
 	}
 }
