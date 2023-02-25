@@ -3,8 +3,19 @@ import pool from "./database";
 /** Migrate the database tables */
 
 const migrate = async () => {
+	console.log(' ▄▀▀▄ ▀▄  ▄▀▀█▀▄   ▄▀▀▀▀▄   ▄▀▀▄ ▄▄   ▄▀▀▀▀▄    ▄▀▀▀▀▄  \n'
+		+ '█  █ █ █ █   █  █ █     ▄▀ █  █   ▄▀ █         █      █ \n'
+		+ '▐  █  ▀█ ▐   █  ▐ ▐ ▄▄▀▀   ▐  █▄▄▄█  █    ▀▄▄  █      █ \n'
+		+ '  █   █      █      █         █   █  █     █ █ ▀▄    ▄▀ \n'
+		+ '▄▀   █    ▄▀▀▀▀▀▄    ▀▄▄▄▄▀  ▄▀  ▄▀  ▐▀▄▄▄▄▀ ▐   ▀▀▀▀   \n'
+		+ '█    ▐   █       █       ▐  █   █    ▐                  \n'
+		+ '▐        ▐       ▐          ▐   ▐                       \n'
+		+ 'DATABASE MIGRATION TOOL 0.0.1')
+
+
 	console.log('\nMigrating database...');
 	console.log('\n[1/2] Creating users table...');
+
 	/** Create the users table */
 	try {
 		const result = await pool.query(
@@ -17,12 +28,10 @@ const migrate = async () => {
     salt text COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
-    is_disabled boolean NOT NULL,
-    CONSTRAINT users_pkey PRIMARY KEY (uid)
-)
-			)`
+    is_disabled boolean NOT NULL
+);`
 		);
-		console.log(result);
+		//console.log(result);
 	}
 	catch (error) {
 		console.error('\nError creating users table: ', error);
@@ -32,10 +41,10 @@ const migrate = async () => {
 
 	/** Create the refresh_tokens table */
 	try {
-		const result = await pool.query(
-			`CREATE TABLE IF NOT EXISTS public.refresh_tokens
+		const result = await pool.query(`
+		CREATE TABLE IF NOT EXISTS public.refresh_tokens
 (
-	id integer NOT NULL DEFAULT nextval('refresh_tokens_id_seq'::regclass),
+    id SERIAL PRIMARY KEY,
     user_uid character varying(255) COLLATE pg_catalog."default" NOT NULL,
     token character varying(255) COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone NOT NULL,
@@ -44,19 +53,21 @@ const migrate = async () => {
     device character varying(255) COLLATE pg_catalog."default" NOT NULL,
     is_disabled boolean DEFAULT false,
     disable_reason character varying(255) COLLATE pg_catalog."default",
-    last_used_at timestamp without time zone,
-    CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id)
-	}
-			)`
+    last_used_at timestamp without time zone
+);
+
+		`
 		);
-		console.log(result);
 	}
 	catch (error) {
 		console.error('\x1b[31m%s\x1b[0m', '\nError creating refresh_tokens table: ', error);
+		throw error;
 	}
 };
 
-migrate().then(r => console.log('\x1b[32m%s\x1b[0m', '\nMigration complete!🎉')).catch(e => console.error('\x1b[31m%s\x1b[0m','\nMigration failed😔😔😔: ', e));
+migrate()
+	.then(r => console.log('\x1b[32m%s\x1b[0m', '\nMigration complete! :-))'))
+	.catch(e => console.error('\x1b[31m%s\x1b[0m', '\nMigration failed: ', e));
 
 
 
