@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cookies());
 app.use(cors());
 
-app.use('/api/auth-service/', router);
+app.use('/auth-service/api/', router);
 
 app.listen(process.env.PORT, () => {
 	console.log(`Server running on port ${process.env.PORT}`);

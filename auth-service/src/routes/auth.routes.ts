@@ -5,50 +5,20 @@ import {RegistrationController} from "../controllers/registration.controller";
 import {TokenController} from "../controllers/token.controller";
 import {UserController} from "../controllers/user.controller";
 import {authMiddleware} from "../middlewares/auth";
-import {HeaderService} from "../services/header.service";
 
 const router = express.Router();
 
-router.post('/reg', RegistrationController.registerUser);
 router.post('/login', LoginControllers.login);
-// router.post('/refresh', TokenController.refreshAccessToken);
-router.get('/ping', (req, res) => {
-	const browser = HeaderService.getBrowser(req);
-	const device = HeaderService.getDevice(req);
-	res.status(200)
-		.send(JSON.stringify({
-			message: 'pong',
-			date: new Date(),
-			'user-agent': req.headers['user-agent'],
-			"your-ip": req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-			"your-send": req.body,
-			browser,
-			device
-		}));
-	res.end();
-});
-
-router.post('/logout', authMiddleware, LoginControllers.logout);
-router.post('/disableToken', authMiddleware, TokenController.disableToken);
-
-
+router.post('/register', RegistrationController.registerUser);
+router.get('/ping', (req, res) => res.status(200).json({message: "pong"}));
 //protected routes
 
-router.post('/sping', authMiddleware, (req, res) => {
-	res.status(200)
-		.send(JSON.stringify({
-			message: 'pong',
-			date: new Date(),
-			'user-agent': req.headers['user-agent'],
-			"your-ip": req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-			"your-send": req.body
-		}));
-	res.end();
-});
-
-router.get('/reissueAccessToken', TokenController.validateRefreshToken, TokenController.reissueAccessToken);
+router.post('/disableToken', authMiddleware, TokenController.disableToken);
+router.post('/logout', authMiddleware, LoginControllers.logout);
+router.get('/refresh-token', TokenController.validateRefreshToken, TokenController.reissueAccessToken);
 router.post('/changePassword', TokenController.validateAccessToken, PasswordController.changePassword);
-router.post('/getActiveSessions', authMiddleware, UserController.getActiveRefreshTokens);
-
+router.get('/user', authMiddleware, UserController.getUser);
+router.get('/active-tokens', authMiddleware, UserController.getActiveRefreshTokens);
+router.get('/auth-ping', authMiddleware, (req, res) => res.status(200).json({message: "pong"}));
 
 export default router;

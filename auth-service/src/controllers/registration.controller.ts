@@ -6,6 +6,7 @@ import {v4 as uuidv4} from "uuid";
 import {UserModel} from "../models/user.model";
 import {TokensRepository} from "../repositories/tokens.repository";
 import {UsersRepository} from "../repositories/user.repository";
+import {HttpService} from "../services/http.service";
 import {PasswordService} from "../services/password.service";
 import {TokenService} from "../services/token.service";
 
@@ -13,14 +14,22 @@ import {TokenService} from "../services/token.service";
 export class RegistrationController {
 	public static registerUser = async (req: Request, res: Response): Promise<void> => {
 		try {
-			const {username, password, email} = req.body;
-
-			if (username.length < 3) {
+			const {login, password, email} = req.body;
+			if (!Boolean(login)) {
+				return res.status(400).json({message: "Username is required"});
+			}
+			if (!Boolean(password)) {
+				return res.status(400).json({message: "Password is required"});
+			}
+			if (!Boolean(email)) {
+				return res.status(400).json({message: "Email is required"});
+			}
+			if (login.length < 3) {
 				return res.status(400).json({message: "Username must be at least 3 characters long"});
 			}
 
 			const usernameRegex = /^[a-zA-Z0-9]+$/;
-			if (!usernameRegex.test(username)) {
+			if (!usernameRegex.test(login)) {
 				return res.status(400).json({message: "Username must contain only letters and numbers"});
 			}
 
@@ -35,7 +44,7 @@ export class RegistrationController {
 			}
 
 			// check if user already exists
-			const existingUsername = await UsersRepository.getUserByUsername(username);
+			const existingUsername = await UsersRepository.getUserByUsername(login);
 			if (existingUsername) {
 				return res.status(400).json({message: "Username already exists"});
 			}
@@ -50,7 +59,7 @@ export class RegistrationController {
 
 			const user: UserModel = {
 				uid: uuidv4(),
-				username: username,
+				username: login,
 				password_hash: passwordHash,
 				email: email,
 				salt: salt,
@@ -58,24 +67,16 @@ export class RegistrationController {
 				updatedAt: new Date(),
 				isDisabled: false,
 			};
-
+			// create access and refresh token
+			const refreshToken = TokenService.generateRefreshToken(user);
+			const accessToken = TokenService.generateAccessToken(refreshToken);
+			// save refresh token to db
+			const refreshTokenModel = TokenService.createRefreshTokenModel(refreshToken, user, req);
 			const regResult = await UsersRepository.createUser(user);
-			if (regResult) {
-				// create access and refresh token
-				const refreshToken = TokenService.generateRefreshToken(user);
-				const accessToken = TokenService.generateAccessToken(user.uid);
-				// save refresh token to db
-				const refreshTokenModel = TokenService.createRefreshTokenModel(refreshToken, user, req);
-				await TokensRepository.saveRefreshToken(refreshTokenModel);
-				// send response
-				await res.status(200).json({accessToken}).setCookie('refreshToken', refreshToken, {
-						httpOnly: true,
-					}
-				);
-			}
-			else {
-				await res.status(500).json({message: "Registration failed, please try again later"});
-			}
+			await TokensRepository.saveRefreshToken(refreshTokenModel);
+			// send response
+			HttpService.setRefreshTokenCookie(res, refreshToken)
+			await res.status(200).json({accessToken});
 		}
 		catch (err) {
 			console.error(err);

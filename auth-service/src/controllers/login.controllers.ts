@@ -4,6 +4,7 @@ import {
 } from "express";
 import {TokensRepository} from "../repositories/tokens.repository";
 import {UsersRepository} from "../repositories/user.repository";
+import {HttpService} from "../services/http.service";
 import {PasswordService} from "../services/password.service";
 import {TokenService} from "../services/token.service";
 
@@ -11,8 +12,11 @@ export class LoginControllers {
 	public static async login(req: Request, res: Response): Promise<void> {
 		try {
 			const {login, password} = req.body;
-			if (!login || !password) {
-				return await res.status(400).json({message: "Incorrect request"});
+			if (!Boolean(login)) {
+				return await res.status(400).json({message: "Login is required"});
+			}
+			if (!Boolean(password)) {
+				return await res.status(400).json({message: "Password is required"});
 			}
 			const userByEmail = await UsersRepository.getUserByEmail(login);
 			const userByUsername = await UsersRepository.getUserByUsername(login);
@@ -31,8 +35,8 @@ export class LoginControllers {
 			const accessToken = TokenService.generateAccessToken(refreshToken);
 			const refreshTokenModel = TokenService.createRefreshTokenModel(refreshToken, user, req);
 			await TokensRepository.saveRefreshToken(refreshTokenModel);
-			//res.setHeader('Set-Cookie', `refreshToken=${refreshToken};HttpOnly; Secure; SameSite=None; Path=/`);
-			res.setHeader('Set-Cookie', `refreshToken=${refreshToken}`);
+			//set refresh token to cookie
+			HttpService.setRefreshTokenCookie(res, refreshToken);
 			return await res.status(200).json({accessToken});
 		}
 		catch (err) {
@@ -43,14 +47,9 @@ export class LoginControllers {
 	}
 
 	public static async logout(req: Request, res: Response): Promise<void> {
-		const {refreshToken} = req.body;
-		if (!refreshToken) {
-			return await res.status(400).json({message: "Incorrect request"});
-		}
-		const token = await TokensRepository.getRefreshTokenByToken(refreshToken);
-		if (!token) {
-			return await res.status(400).json({message: "Incorrect request"});
-		}
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
+		//clear cookie
+		HttpService.setRefreshTokenCookie(res, '')
 		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user logout');
 		await res.status(200).json({message: "Logout successful"});
 	}

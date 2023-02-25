@@ -5,7 +5,7 @@ import {
 	Response
 } from "express";
 import {UsersRepository} from "../repositories/user.repository";
-import {HeaderService} from "../services/header.service";
+import {HttpService} from "../services/http.service";
 import {TokenService} from "../services/token.service";
 
 dotenv.config();
@@ -16,7 +16,7 @@ export const authMiddleware = async (
 	next: NextFunction,
 ) => {
 	try {
-		const accessToken = HeaderService.getAccessToken(req);
+		const accessToken = HttpService.getAccessToken(req);
 		const decodedToken = await TokenService.verifyAccessToken(accessToken);
 		if (!decodedToken) {
 			return res.status(401).json({message: 'Invalid access token'});
@@ -31,7 +31,7 @@ export const authMiddleware = async (
 		}
 	}
 	catch (err) {
-		return res.status(401).json({message: err.message});
+		return res.status(403).json({message: err.message});
 	}
 	next();
 };

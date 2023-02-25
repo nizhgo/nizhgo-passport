@@ -4,7 +4,7 @@ import {
 } from "express";
 import {TokensRepository} from "../repositories/tokens.repository";
 import {UsersRepository} from "../repositories/user.repository";
-import {HeaderService} from "../services/header.service";
+import {HttpService} from "../services/http.service";
 import {TokenService} from "../services/token.service";
 
 export class TokenController {
@@ -35,7 +35,7 @@ export class TokenController {
 	 * @param res - response
 	 */
 	public static async disableToken(req: Request, res: Response): Promise<void> {
-		const refreshToken = HeaderService.getAuthorizationHeader(req);
+		const refreshToken = HttpService.getAuthorizationHeader(req);
 		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user manually disabled');
 		await res.status(200).json({message: "Refresh token disabled successfully"});
 	}
@@ -47,8 +47,7 @@ export class TokenController {
 	 * @param next - next middleware or controller
 	 */
 	public static async validateRefreshToken(req: Request, res: Response, next: any): Promise<void> {
-		const cookies = req.cookies;
-		const refreshToken = HeaderService.getRefreshTokenFromCookie(req);
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
 		if (!refreshToken) {
 			return await res.status(400).json({message: "Incorrect request"});
 		}
@@ -74,7 +73,7 @@ export class TokenController {
 	 */
 
 	public static async validateAccessToken(req: Request, res: Response, next: any): Promise<void> {
-		const accessToken = HeaderService.getAuthorizationHeader(req);
+		const accessToken = HttpService.getAuthorizationHeader(req);
 		if (!accessToken) {
 			return await res.status(400).json({message: "Incorrect request"});
 		}
@@ -103,7 +102,7 @@ export class TokenController {
 	 * @param res - response
 	 */
 	public static async reissueAccessToken(req: Request, res: Response): Promise<void> {
-		const refreshToken = HeaderService.getRefreshTokenFromCookie(req);
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
 		try {
 			const accessToken = TokenService.generateAccessToken(refreshToken);
 			await TokensRepository.updateLastUsedAt(refreshToken);

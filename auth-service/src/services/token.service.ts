@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import jwt from 'jsonwebtoken';
 import {RefreshTokenModel} from "../models/refreshToken.model";
 import {UserModel} from '../models/user.model';
-import {HeaderService} from "./header.service";
+import {HttpService} from "./http.service";
 
 dotenv.config();
 
@@ -13,10 +13,10 @@ interface TokenPayload {
 	exp: number;
 }
 
-const tokenSettings = {
+export const tokenSettings = {
 	accessToken: {
 		//refresh token expires in 10 minutes
-		expiresIn: 10 * 60 * 1000 + Date.now(),
+		expiresIn: 15 * 60 * 1000 + Date.now(),
 		secret: process.env.ACCESS_TOKEN_SECRET
 	},
 	refreshToken: {
@@ -93,8 +93,8 @@ export class TokenService {
 
 	public static createRefreshTokenModel(token: string, user: UserModel, req: Request): RefreshTokenModel {
 		try {
-			const browser = HeaderService.getBrowser(req);
-			const device = HeaderService.getDevice(req);
+			const browser = HttpService.getBrowser(req);
+			const device = HttpService.getDevice(req);
 			const now = new Date();
 			const refreshToken: RefreshTokenModel = {
 				user_uid: user.uid,
