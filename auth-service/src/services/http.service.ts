@@ -91,11 +91,11 @@ export class HttpService {
 	 * @param token
 	 */
 	public static setRefreshTokenCookie(res: Response, token: string): void {
-		res.cookie('refreshToken', token, {
+		return res.cookie('refreshToken', token, {
 			httpOnly: true,
 			secure: true,
 			sameSite: true,
-			expires: tokenSettings.refreshToken.expiresIn,
+			maxAge: tokenSettings.refreshToken.expiresIn,
 		});
 	}
 }
