@@ -18,6 +18,7 @@ services:
       - "3001:3001"
     volumes:
       - ./data/app/
+
     depends_on:
       - db
     restart: always
