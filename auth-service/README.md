@@ -59,14 +59,14 @@ cp .env.example .env
 
 Для запуска контейнера необходимо выполнить следующую команду:
 ```bash
-docker-compose up -d
+pnpm docker-dev
 ```
 
 ### 4. Создание базы данных
 Для создания базы данных необходимо выполнить следующую команду:
 
 ```bash
-pnpm run mirate-database
+pnpm mirate-database-dev
 ```
 
 ### 5. Запуск приложения
@@ -85,7 +85,10 @@ pnpm run build && pnpm run start
 
 ## API Endpoints
 
-> Все запросы через base route /api/auth/
+> **Все запросы через base-route `/auth-service/api/`** 
+>
+> Например: localhost:3001/auth-service/api/ping
+> 
 
 
 | Метод | Эндоинт           | Тело запроса                                                 | Заголовок запроса                                                           | Ожидаемый ответ                                                                             | Описание                                                             |
@@ -109,14 +112,20 @@ pnpm run build && pnpm run start
 > 
 > **Work in progress. Пока не работает.**
 
-### Сборка образа 
+### Сборка образа
 ```bash
-docker build -t auth-service .
+pnpm docker-build
 ```
 
 ### Запуск контейнера
 ```bash
-docker run -p 3000:3000 auth-service
+pnpm docker-prod
+```
+
+### Миграция таблиц DB
+Требуется подключится к контейнеру c приложением и выполнить команду:
+```bash
+pnpm migrate-database-prod
 ```
 
 ## Автор
