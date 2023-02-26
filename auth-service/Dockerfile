@@ -13,10 +13,11 @@ COPY . .
 
 EXPOSE ${PORT}
 
-RUN npm run build
+RUN npm i pnpm
+RUN pnpm build
 
-# mirare database tables
-CMD ["node", "build/database/migrate.js"]
-CMD [ "node", "build/index.js" ]
+## mirare database tables
+#CMD ["node", "build/database/migrate.js"]
+#CMD [ "node", "build/index.js" ]
 
 
