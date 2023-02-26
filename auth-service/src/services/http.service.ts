@@ -21,7 +21,7 @@ export class HttpService {
 	 * @returns {string} Access token
 	 * @throws {Error} If access token is not valid
 	 */
-	public static getAccessToken(req: Request): string {
+	public static getTokenFromHeader(req: Request): string {
 		try {
 			const authHeader = HttpService.getAuthorizationHeader(req);
 			return authHeader.split(" ")[1];

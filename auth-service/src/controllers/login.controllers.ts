@@ -46,9 +46,7 @@ export class LoginControllers {
 			const accessToken = TokenService.generateAccessToken(refreshToken);
 			const refreshTokenModel = TokenService.createRefreshTokenModel(refreshToken, user, req);
 			await TokensRepository.saveRefreshToken(refreshTokenModel);
-			//set refresh token to cookie
-			HttpService.setRefreshTokenCookie(res, refreshToken);
-			return await res.status(200).json({accessToken});
+			return await res.status(200).json({accessToken}, {refreshToken});
 		}
 		catch (err) {
 			console.log(err);
@@ -66,7 +64,7 @@ export class LoginControllers {
 	 * @returns {Promise<void>} - Returns void. But sends a response to the client.
 	 */
 	public static async logout(req: Request, res: Response): Promise<void> {
-		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
+		const refreshToken = HttpService.getTokenFromHeader(req);
 		//clear refresh token cookie
 		HttpService.setRefreshTokenCookie(res, '');
 		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user logout');

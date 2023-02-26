@@ -29,7 +29,7 @@ export class UserController {
 	 */
 	public static async getUser(req: Request, res: Response): Promise<void> {
 		try {
-			const accessToken = HttpService.getAccessToken(req);
+			const accessToken = HttpService.getTokenFromHeader(req);
 			const decodedToken = await TokenService.verifyAccessToken(accessToken);
 			const userResponse = await UsersRepository.findUserByUid(decodedToken.uid);
 			const user: UserModel = UserService.mapUser(userResponse);
@@ -51,7 +51,7 @@ export class UserController {
 	 */
 	public static async getActiveRefreshTokens(req: Request, res: Response): Promise<void> { //return all active tokens for user
 		try {
-			const accessToken = HttpService.getAccessToken(req);
+			const accessToken = HttpService.getTokenFromHeader(req);
 			const decodedToken = await TokenService.verifyAccessToken(accessToken);
 			const activeRefreshTokens = await TokensRepository.getActiveTokensByUserUid(decodedToken.uid);
 			//return array in format {id, device: string, browser: string, created_at: string, last_used_at: string}

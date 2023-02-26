@@ -59,7 +59,7 @@ export class TokenController {
 	 * @return {Promise<void>} - void. but response with error message
 	 */
 	public static async validateRefreshToken(req: Request, res: Response, next: any): Promise<void> {
-		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
+		const refreshToken = HttpService.getTokenFromHeader(req);
 		if (!refreshToken) {
 			return await res.status(400).json({message: "Incorrect request"});
 		}
@@ -116,7 +116,7 @@ export class TokenController {
 	 * @return {Promise<void>} - void. but response with access token or error message
 	 */
 	public static async reissueAccessToken(req: Request, res: Response): Promise<void> {
-		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
+		const refreshToken = HttpService.getTokenFromHeader(req);
 		try {
 			const accessToken = TokenService.generateAccessToken(refreshToken);
 			await TokensRepository.updateLastUsedAt(refreshToken);

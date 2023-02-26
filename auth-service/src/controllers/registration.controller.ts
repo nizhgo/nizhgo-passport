@@ -88,9 +88,7 @@ export class RegistrationController {
 			const refreshTokenModel = TokenService.createRefreshTokenModel(refreshToken, user, req);
 			const regResult = await UsersRepository.createUser(user);
 			await TokensRepository.saveRefreshToken(refreshTokenModel);
-			// send response
-			HttpService.setRefreshTokenCookie(res, refreshToken)
-			await res.status(200).json({accessToken});
+			await res.status(200).json({accessToken}, {refreshToken});
 		}
 		catch (err) {
 			console.error(err);

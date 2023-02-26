@@ -26,7 +26,7 @@ export const authMiddleware = async (
 ) => {
 	try {
 		// Extracting access token from request
-		const accessToken = HttpService.getAccessToken(req);
+		const accessToken = HttpService.getTokenFromHeader(req);
 		// Verifying access token using token service
 		const decodedToken = await TokenService.verifyAccessToken(accessToken);
 		// If token is invalid, return error response
