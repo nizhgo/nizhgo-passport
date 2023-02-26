@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "build-image": "docker build -t auth-service .",
+    "docker-build": "docker build -t auth-service .",
     "start": "node build/index.js",
     "docker-compose": "docker-compose up -d",
-    "stop-image": "docker-compose down",
-    "mirate-database": "ts-node src/database/migrate.ts"
+    "docker-stop": "docker-compose down",
+    "mirate-database-dev": "ts-node src/database/migrate.ts",
+    "docker-prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "docker-dev": "docker-compsoe -f docker-compose.dev.yml up -d"
   },
   "author": "nizhgo",
   "license": "ISC",
@@ -31,6 +33,7 @@
     "winston": "^3.8.2"
   },
   "devDependencies": {
-    "@types/node": "^18.14.1"
+    "@types/node": "^18.14.1",
+    "typescript": "^4.9.5"
   }
 }
