@@ -1,73 +1,99 @@
-import pool from "./database";
+import pool from './database';
 
-/** Migrate the database tables */
+const greenColor = '\x1b[32m%s\x1b[0m';
+const redColor = '\x1b[31m%s\x1b[0m';
+const version = 'v0.0.2';
+
+const consoleLog = (message: string, color?: string) => {
+	color ? console.log(color, message) : console.log(message);
+}
+
+const errorLog = (message: string, color?: string) => {
+	color ? console.error(color, message) : console.error(message);
+}
+
+const createUsersTable = `
+  CREATE TABLE IF NOT EXISTS public.users (
+    uid TEXT COLLATE pg_catalog."default" NOT NULL,
+    username TEXT COLLATE pg_catalog."default" NOT NULL,
+    email TEXT COLLATE pg_catalog."default" NOT NULL,
+    password_hash TEXT COLLATE pg_catalog."default" NOT NULL,
+    salt TEXT COLLATE pg_catalog."default" NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    is_disabled BOOLEAN NOT NULL
+  );
+`;
+
+const createRefreshTokensTable = `
+  CREATE TABLE IF NOT EXISTS public.refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_uid CHARACTER VARYING(255) COLLATE pg_catalog."default" NOT NULL,
+    token CHARACTER VARYING(255) COLLATE pg_catalog."default" NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    disabled_at TIMESTAMP WITHOUT TIME ZONE,
+    browser CHARACTER VARYING(255) COLLATE pg_catalog."default" NOT NULL,
+    device CHARACTER VARYING(255) COLLATE pg_catalog."default" NOT NULL,
+    is_disabled BOOLEAN DEFAULT false,
+    disable_reason CHARACTER VARYING(255) COLLATE pg_catalog."default",
+    last_used_at TIMESTAMP WITHOUT TIME ZONE
+  );
+`;
 
 const migrate = async () => {
-	console.log(' ▄▀▀▄ ▀▄  ▄▀▀█▀▄   ▄▀▀▀▀▄   ▄▀▀▄ ▄▄   ▄▀▀▀▀▄    ▄▀▀▀▀▄  \n'
-		+ '█  █ █ █ █   █  █ █     ▄▀ █  █   ▄▀ █         █      █ \n'
-		+ '▐  █  ▀█ ▐   █  ▐ ▐ ▄▄▀▀   ▐  █▄▄▄█  █    ▀▄▄  █      █ \n'
-		+ '  █   █      █      █         █   █  █     █ █ ▀▄    ▄▀ \n'
-		+ '▄▀   █    ▄▀▀▀▀▀▄    ▀▄▄▄▄▀  ▄▀  ▄▀  ▐▀▄▄▄▄▀ ▐   ▀▀▀▀   \n'
-		+ '█    ▐   █       █       ▐  █   █    ▐                  \n'
-		+ '▐        ▐       ▐          ▐   ▐                       \n'
-		+ 'DATABASE MIGRATION TOOL 0.0.1')
+	console.info(
+		' ▄▀▀▄ ▀▄  ▄▀▀█▀▄   ▄▀▀▀▀▄   ▄▀▀▄ ▄▄   ▄▀▀▀▀▄    ▄▀▀▀▀▄  \n' +
+		'█  █ █ █ █   █  █ █     ▄▀ █  █   ▄▀ █         █      █ \n' +
+		'▐  █  ▀█ ▐   █  ▐ ▐ ▄▄▀▀   ▐  █▄▄▄█  █    ▀▄▄  █      █ \n' +
+		'  █   █      █      █         █   █  █     █ █ ▀▄    ▄▀ \n' +
+		'▄▀   █    ▄▀▀▀▀▀▄    ▀▄▄▄▄▀  ▄▀  ▄▀  ▐▀▄▄▄▄▀ ▐   ▀▀▀▀   \n' +
+		'█    ▐   █       █       ▐  █   █    ▐                  \n' +
+		'▐        ▐       ▐          ▐   ▐                       \n' +
+		'AUTH-SERVICE DATABASE MIGRATION TOOL \n' +
+		`Version: ${version} \n` +
+		'==================================== \n'
+	);
 
-
-	console.log('\nMigrating database...');
-	console.log('\n[1/2] Creating users table...');
-
-	/** Create the users table */
+	consoleLog('[1/3] Connecting to database...');
 	try {
-		const result = await pool.query(
-			`CREATE TABLE IF NOT EXISTS public.users
-(
-    uid text COLLATE pg_catalog."default" NOT NULL,
-    username text COLLATE pg_catalog."default" NOT NULL,
-    email text COLLATE pg_catalog."default" NOT NULL,
-    password_hash text COLLATE pg_catalog."default" NOT NULL,
-    salt text COLLATE pg_catalog."default" NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    is_disabled boolean NOT NULL
-);`
-		);
-		//console.log(result);
+		await pool.query('SELECT NOW()');
+		consoleLog('Successfully connected to database!', greenColor);
 	}
 	catch (error) {
-		console.error('\nError creating users table: ', error);
+		errorLog('Failed to connect to database!', redColor);
+		process.exit(1);
 	}
 
-	console.log('\n[2/2] Creating refresh_tokens table...');
-
-	/** Create the refresh_tokens table */
+	consoleLog('Creating tables...');
+	consoleLog('[2/3] Creating users table...');
 	try {
-		const result = await pool.query(`
-		CREATE TABLE IF NOT EXISTS public.refresh_tokens
-(
-    id SERIAL PRIMARY KEY,
-    user_uid character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    token character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    disabled_at timestamp without time zone,
-    browser character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    device character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    is_disabled boolean DEFAULT false,
-    disable_reason character varying(255) COLLATE pg_catalog."default",
-    last_used_at timestamp without time zone
+		await pool.query(createUsersTable);
+		consoleLog('Users table created!', greenColor);
+	}
+	catch (error) {
+		errorLog('Failed to create users table!', redColor);
+		process.exit(1);
+	}
+
+	consoleLog('[3/3] Creating refresh_tokens table...');
+	try {
+		await pool.query(createRefreshTokensTable);
+		consoleLog('Refresh tokens table created!', greenColor);
+	}
+	catch (error) {
+		errorLog('Failed to create refresh tokens table!', redColor);
+		process.exit(1);
+	}
+
+	consoleLog('='.repeat(32));
+	consoleLog('\n｡◕‿‿◕｡ Mission complete! ｡◕‿‿◕｡\n', greenColor);
+	consoleLog('='.repeat(32));
+}
+
+migrate().then(() => {
+		process.exit(0);
+	}
 );
-
-		`
-		);
-	}
-	catch (error) {
-		console.error('\x1b[31m%s\x1b[0m', '\nError creating refresh_tokens table: ', error);
-		throw error;
-	}
-};
-
-migrate()
-	.then(r => console.log('\x1b[32m%s\x1b[0m', '\nMigration complete! :-))'))
-	.catch(e => console.error('\x1b[31m%s\x1b[0m', '\nMigration failed: ', e));
 
 
 
