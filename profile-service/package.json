@@ -2,12 +2,15 @@
   "name": "profile-service",
   "version": "0.0.1",
   "description": "Profile microservice",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node build/index.js",
-    "docker-dev": "docker-compose up -d"
+    "docker-prod": "docker-compose -f docker-compose.prod.yml up -d",
+    "docker-dev": "docker-compose -f docker-compose.dev.yml up -d",
+    "docker-build": "docker build -t profile-service .",
+    "docker-stop": "docker-compose down"
   },
   "author": "@nizhgo",
   "license": "ISC",
@@ -16,13 +19,13 @@
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",
     "express": "^4.17.1",
-    "mongoose": "^5.9.7",
-    "morgan": "^1.10.0"
+    "mongoose": "^7.0.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^2.0.21",
+    "ts-node": "^10.9.1"
   },
   "devDependencies": {
-    "@types/node": "^18.14.2",
-    "nodemon": "^2.0.20",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.10"
+    "@types/node": "^18.14.6",
+    "typescript": "^4.9.5"
   }
 }

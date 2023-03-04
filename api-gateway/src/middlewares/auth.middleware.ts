@@ -1,7 +1,7 @@
-import {Request, Response, NextFunction, response} from "express";
+import {Request, Response, NextFunction} from "express";
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    //TODO requst to auth-service
+    //TODO request to auth-service
 
 }
 

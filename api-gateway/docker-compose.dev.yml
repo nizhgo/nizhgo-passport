@@ -1,0 +1,42 @@
+version: '3'
+services:
+  auth-service:
+    image: auth-service:latest
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres-auth-service
+    restart: always
+
+  postgres-auth-service:
+    image: postgres:alpine3.17
+    environment:
+      POSTGRES_USER: ${AUTH_SERVICE_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_SERVICE_DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_SERVICE_DB_NAME}
+    ports:
+      - "4432:4432"
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    restart: always
+  profile-service:
+    image: profile-service:latest
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo-profile-service
+    restart: always
+  mongo-profile-service:
+    image: mongo:5.0
+    volumes:
+      - ./data/db:/data/db
+      - ./data/configdb:/data/configdb
+      - ./data/dump:/dump
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    restart: always
+
+
+
+

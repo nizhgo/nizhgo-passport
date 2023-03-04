@@ -1,4 +1,13 @@
-import mongoose from "mongoose";
+import mongoose, {ConnectOptions} from "mongoose";
+
+
+
+const OPTIONS = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: true
+} as ConnectOptions
 
 /** Connect to MongoDB database
  * @returns {Promise<void>}
@@ -17,12 +26,7 @@ async function connectToDB(): Promise<void> {
         );
     }
     try {
-        await mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true,
-            useFindAndModify: true
-        });
+        await mongoose.connect(MONGODB_URI, OPTIONS);
     } catch (err) {
         console.error(err);
         process.exit(1);
