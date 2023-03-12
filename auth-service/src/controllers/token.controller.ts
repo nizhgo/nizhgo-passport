@@ -46,7 +46,7 @@ export class TokenController {
 	 * @throws {Error} - if refresh token not found in database
 	 */
 	public static async disableToken(req: Request, res: Response): Promise<void> {
-		const refreshToken = HttpService.getAuthorizationHeader(req);
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
 		await TokensRepository.disableRefreshTokenByToken(refreshToken, 'user manually disabled');
 		await res.status(200).json({message: "Refresh token disabled successfully"});
 	}
@@ -59,7 +59,7 @@ export class TokenController {
 	 * @return {Promise<void>} - void. but response with error message
 	 */
 	public static async validateRefreshToken(req: Request, res: Response, next: any): Promise<void> {
-		const refreshToken = HttpService.getTokenFromHeader(req);
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
 		if (!refreshToken) {
 			return await res.status(400).json({message: "Incorrect request"});
 		}
@@ -116,7 +116,7 @@ export class TokenController {
 	 * @return {Promise<void>} - void. but response with access token or error message
 	 */
 	public static async reissueAccessToken(req: Request, res: Response): Promise<void> {
-		const refreshToken = HttpService.getTokenFromHeader(req);
+		const refreshToken = HttpService.getRefreshTokenFromCookie(req);
 		try {
 			const accessToken = TokenService.generateAccessToken(refreshToken);
 			await TokensRepository.updateLastUsedAt(refreshToken);

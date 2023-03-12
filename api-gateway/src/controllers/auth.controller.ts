@@ -1,7 +1,7 @@
-import express from "express";
+import express, {Request} from "express";
 
 class AuthController {
-    public static async login(): Promise<void> {
+    public static async login(req: Request, res: Response): Promise<void> {
 
     }
 
